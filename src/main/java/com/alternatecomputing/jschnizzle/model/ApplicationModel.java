@@ -1,12 +1,12 @@
 /*
  * Copyright 2010 Alternate Computing Solutions Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,9 +20,10 @@ import javax.swing.DefaultListModel;
 public class ApplicationModel {
 	private static ApplicationModel model = new ApplicationModel();
 	private String fileName;
-	private DefaultListModel activityScriptsModel;
-	private DefaultListModel classScriptsModel;
-	private DefaultListModel useCaseScriptsModel;
+	private DefaultListModel<Diagram> activityScriptsModel;
+	private DefaultListModel<Diagram> classScriptsModel;
+	private DefaultListModel<Diagram> useCaseScriptsModel;
+	private DefaultListModel<Diagram> sequenceScriptsModel;
 	private boolean isDirty;
 	private Diagram selectedDiagram;
 
@@ -31,9 +32,10 @@ public class ApplicationModel {
 	}
 
 	public ApplicationModel() {
-		activityScriptsModel = new DefaultListModel();
-		classScriptsModel = new DefaultListModel();
-		useCaseScriptsModel = new DefaultListModel();
+		activityScriptsModel = new DefaultListModel<Diagram>();
+		classScriptsModel = new DefaultListModel<Diagram>();
+		useCaseScriptsModel = new DefaultListModel<Diagram>();
+		sequenceScriptsModel = new DefaultListModel<Diagram>();
 	}
 
 	public String getFileName() {
@@ -44,16 +46,20 @@ public class ApplicationModel {
 		this.fileName = fileName;
 	}
 
-	public DefaultListModel getActivityScriptsModel() {
+	public DefaultListModel<Diagram> getActivityScriptsModel() {
 		return activityScriptsModel;
 	}
 
-	public DefaultListModel getClassScriptsModel() {
+	public DefaultListModel<Diagram> getClassScriptsModel() {
 		return classScriptsModel;
 	}
 
-	public DefaultListModel getUseCaseScriptsModel() {
+	public DefaultListModel<Diagram> getUseCaseScriptsModel() {
 		return useCaseScriptsModel;
+	}
+
+	public DefaultListModel<Diagram> getSequenceScriptsModel() {
+		return sequenceScriptsModel;
 	}
 
 	public void deleteDiagram(Diagram diagram) {
@@ -70,6 +76,10 @@ public class ApplicationModel {
 				useCaseScriptsModel.removeElement(diagram);
 				isDirty = true;
 				break;
+			case Sequence:
+				sequenceScriptsModel.removeElement(diagram);
+				isDirty = true;
+				break;
 		}
 	}
 
@@ -77,6 +87,7 @@ public class ApplicationModel {
 		activityScriptsModel.clear();
 		classScriptsModel.clear();
 		useCaseScriptsModel.clear();
+		sequenceScriptsModel.clear();
 		isDirty = false;
 	}
 
@@ -92,6 +103,10 @@ public class ApplicationModel {
 				break;
 			case UseCase:
 				useCaseScriptsModel.addElement(diagram);
+				isDirty = true;
+				break;
+			case Sequence:
+				sequenceScriptsModel.addElement(diagram);
 				isDirty = true;
 				break;
 		}

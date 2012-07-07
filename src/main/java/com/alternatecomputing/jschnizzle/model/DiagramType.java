@@ -21,7 +21,7 @@ import java.io.Serializable;
  * Enumeration of diagram types
  */
 public enum DiagramType implements Serializable {
-	Class("class"), Activity("activity"), UseCase("usecase");
+	Class("class"), Activity("activity"), UseCase("usecase"), Sequence("sequence");
 
 	private String urlModifier;
 

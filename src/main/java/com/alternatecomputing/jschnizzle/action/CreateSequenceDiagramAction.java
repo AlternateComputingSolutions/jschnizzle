@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Alternate Computing Solutions Inc.
+ * Copyright 2012 Alternate Computing Solutions Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,24 +25,24 @@ import javax.swing.JPanel;
 import org.jdesktop.swingx.JXHeader;
 
 import com.alternatecomputing.jschnizzle.model.Diagram;
+import com.alternatecomputing.jschnizzle.model.DiagramType;
 import com.alternatecomputing.jschnizzle.util.UIUtils;
 
 /**
- * Action class to edit an existing diagram
+ * Action class to create a new sequence diagram
  */
-public class EditDiagramAction extends AbstractAction {
-	private static final long serialVersionUID = -3738133889276413306L;
+public class CreateSequenceDiagramAction extends AbstractAction {
+	private static final long serialVersionUID = 1072166166681098734L;
 	private Frame owner;
-	private Diagram diagram;
 
 	/**
 	 * constructor
 	 *
 	 * @param owner frame on which the dialog will be centered
 	 */
-	public EditDiagramAction(Frame owner) {
-		super("Edit Diagram", null);
-		putValue(SHORT_DESCRIPTION, "Edit an existing diagram");
+	public CreateSequenceDiagramAction(Frame owner) {
+		super("New Sequence Diagram", null);
+		putValue(SHORT_DESCRIPTION, "Create a new sequence diagram");
 		this.owner = owner;
 	}
 
@@ -50,21 +50,14 @@ public class EditDiagramAction extends AbstractAction {
 	 * @see java.awt.event.ActionListener#actionPerformed(ActionEvent)
 	 */
 	public void actionPerformed(ActionEvent e) {
-		JDialog dialog = new JDialog(owner, "Edit " + diagram.getType() + " Diagram", true);
-		JXHeader header = new JXHeader("Edit " + diagram.getType() + " Diagram", "Enter updated details for this " + diagram.getType() + " diagram.");
-		JPanel panel = UIUtils.createDiagramPanel(header, diagram, dialog, false);
+		JDialog dialog = new JDialog(owner, "Create Sequence Diagram", true);
+		Diagram diagram = new Diagram();
+		diagram.setType(DiagramType.Sequence);
+		JXHeader header = new JXHeader("New Sequence Diagram", "Enter details for the new sequence diagram.");
+		JPanel panel = UIUtils.createDiagramPanel(header, diagram, dialog, true);
 		dialog.add(panel);
 		dialog.setSize(600, 400);
 		UIUtils.centerComponent(dialog, owner);
 		dialog.setVisible(true);
-	}
-
-	/**
-	 * set the diagram on which the action will perform
-	 *
-	 * @param diagram diagram
-	 */
-	public void setDiagram(Diagram diagram) {
-		this.diagram = diagram;
 	}
 }

@@ -1,12 +1,12 @@
 /*
  * Copyright 2010 Alternate Computing Solutions Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,8 +22,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.Date;
+import java.io.IOException;
 
+import javax.imageio.ImageIO;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
@@ -52,17 +53,21 @@ import org.jdesktop.swingx.JXFrame;
 import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.alternatecomputing.jschnizzle.action.AboutAction;
+import com.alternatecomputing.jschnizzle.action.CloseAction;
 import com.alternatecomputing.jschnizzle.action.CopyToClipboardAction;
 import com.alternatecomputing.jschnizzle.action.CreateActivityDiagramAction;
 import com.alternatecomputing.jschnizzle.action.CreateClassDiagramAction;
+import com.alternatecomputing.jschnizzle.action.CreateSequenceDiagramAction;
 import com.alternatecomputing.jschnizzle.action.CreateUseCaseDiagramAction;
 import com.alternatecomputing.jschnizzle.action.DeleteDiagramAction;
 import com.alternatecomputing.jschnizzle.action.EditDiagramAction;
 import com.alternatecomputing.jschnizzle.action.ExitAction;
 import com.alternatecomputing.jschnizzle.action.ExportImageAction;
-import com.alternatecomputing.jschnizzle.action.LoadAction;
+import com.alternatecomputing.jschnizzle.action.OpenAction;
 import com.alternatecomputing.jschnizzle.action.SaveAction;
 import com.alternatecomputing.jschnizzle.action.SaveAsAction;
 import com.alternatecomputing.jschnizzle.event.Dispatcher;
@@ -71,6 +76,9 @@ import com.alternatecomputing.jschnizzle.event.Listener;
 import com.alternatecomputing.jschnizzle.model.ApplicationModel;
 import com.alternatecomputing.jschnizzle.model.Diagram;
 import com.alternatecomputing.jschnizzle.model.DiagramType;
+import com.alternatecomputing.jschnizzle.renderer.RendererFactory;
+import com.alternatecomputing.jschnizzle.renderer.WebSequenceRenderer;
+import com.alternatecomputing.jschnizzle.renderer.YUMLRenderer;
 import com.alternatecomputing.jschnizzle.ui.ImagePanel;
 import com.alternatecomputing.jschnizzle.util.UIUtils;
 import com.jgoodies.forms.layout.CellConstraints;
@@ -78,6 +86,7 @@ import com.jgoodies.forms.layout.FormLayout;
 import com.jgoodies.looks.plastic.Plastic3DLookAndFeel;
 
 public class JSchnizzle implements Listener {
+	private static final Logger LOGGER = LoggerFactory.getLogger(JSchnizzle.class);
 	private ApplicationModel applicationModel;
 	private JFrame frame;
 	private ImagePanel imagePanel;
@@ -85,10 +94,12 @@ public class JSchnizzle implements Listener {
 	private CreateActivityDiagramAction createActivityDiagramAction;
 	private CreateClassDiagramAction createClassDiagramAction;
 	private CreateUseCaseDiagramAction createUseCaseDiagramAction;
+	private CreateSequenceDiagramAction createSequenceDiagramAction;
 	private EditDiagramAction editDiagramAction;
 	private DeleteDiagramAction deleteDiagramAction;
 	private ExitAction exitAction;
-	private LoadAction loadAction;
+	private OpenAction openAction;
+	private CloseAction closeAction;
 	private SaveAction saveAction;
 	private SaveAsAction saveAsAction;
 	private CopyToClipboardAction copyToClipboardAction;
@@ -96,15 +107,18 @@ public class JSchnizzle implements Listener {
 	private JPopupMenu activityPopupMenu;
 	private JPopupMenu classPopupMenu;
 	private JPopupMenu useCasePopupMenu;
+	private JPopupMenu sequencePopupMenu;
 	private JPopupMenu imagePopupMenu;
 	private JTextArea consoleTextArea;
 	private JProgressBar progressBar;
-	private JList activityScriptsList;
-	private JList classScriptsList;
-	private JList useCaseScriptsList;
+	private JList<Diagram> activityScriptsList;
+	private JList<Diagram> classScriptsList;
+	private JList<Diagram> useCaseScriptsList;
+	private JList<Diagram> sequenceScriptsList;
 	private JPanel mainPanel;
 
 	private JSchnizzle() {
+		registerRenderers();
 		applicationModel = ApplicationModel.getInstance();
 		initializeLookAndFeel();
 		frame = createMainFrame();
@@ -115,10 +129,16 @@ public class JSchnizzle implements Listener {
 		Dispatcher.addListener(this);
 	}
 
+	private void registerRenderers() {
+		RendererFactory.registerRenderer(new YUMLRenderer());
+		RendererFactory.registerRenderer(new WebSequenceRenderer());
+	}
+
 	private void createPopupMenus() {
 		activityPopupMenu = createPopupMenu(createActivityDiagramAction);
 		classPopupMenu = createPopupMenu(createClassDiagramAction);
 		useCasePopupMenu = createPopupMenu(createUseCaseDiagramAction);
+		sequencePopupMenu = createPopupMenu(createSequenceDiagramAction);
 		imagePopupMenu = createImagePopupMenu();
 	}
 
@@ -127,6 +147,7 @@ public class JSchnizzle implements Listener {
 		createActivityDiagramAction = new CreateActivityDiagramAction(frame);
 		createClassDiagramAction = new CreateClassDiagramAction(frame);
 		createUseCaseDiagramAction = new CreateUseCaseDiagramAction(frame);
+		createSequenceDiagramAction = new CreateSequenceDiagramAction(frame);
 		editDiagramAction = new EditDiagramAction(frame);
 		editDiagramAction.setEnabled(false);
 		deleteDiagramAction = new DeleteDiagramAction(frame);
@@ -135,8 +156,9 @@ public class JSchnizzle implements Listener {
 		saveAction.setEnabled(false);
 		saveAsAction = new SaveAsAction(applicationModel, frame);
 		saveAsAction.setEnabled(false);
-		loadAction = new LoadAction(applicationModel, frame, saveAction);
-		exitAction = new ExitAction(applicationModel, frame, saveAction);
+		openAction = new OpenAction(applicationModel, frame, saveAction);
+		closeAction = new CloseAction(applicationModel, frame, saveAction);
+		exitAction = new ExitAction(applicationModel, frame, saveAction, saveAsAction);
 		copyToClipboardAction = new CopyToClipboardAction();
 		copyToClipboardAction.setEnabled(false);
 		exportImageAction = new ExportImageAction(frame);
@@ -151,7 +173,7 @@ public class JSchnizzle implements Listener {
 			try {
 				UIManager.setLookAndFeel(new Plastic3DLookAndFeel());
 			} catch (UnsupportedLookAndFeelException e1) {
-				UIUtils.logException(e1);
+				LOGGER.error("Error initializing application look and feel.", e1);
 			}
 		}
 	}
@@ -163,19 +185,25 @@ public class JSchnizzle implements Listener {
 		fileNewMenu.add(new JMenuItem(createActivityDiagramAction));
 		fileNewMenu.add(new JMenuItem(createClassDiagramAction));
 		fileNewMenu.add(new JMenuItem(createUseCaseDiagramAction));
+		fileNewMenu.add(new JMenuItem(createSequenceDiagramAction));
 		fileMenu.add(fileNewMenu);
-		fileMenu.add(new JMenuItem(deleteDiagramAction));
-		fileMenu.add(new JMenuItem(exportImageAction));
+		fileMenu.add(new JMenuItem(openAction));
 		fileMenu.addSeparator();
-		fileMenu.add(new JMenuItem(loadAction));
+		fileMenu.add(new JMenuItem(closeAction));
+		fileMenu.addSeparator();
 		fileMenu.add(new JMenuItem(saveAction));
 		fileMenu.add(new JMenuItem(saveAsAction));
+		fileMenu.addSeparator();
+		fileMenu.add(new JMenuItem(exportImageAction));
 		fileMenu.addSeparator();
 		fileMenu.add(new JMenuItem(exitAction));
 		menuBar.add(fileMenu);
 		JMenu editMenu = new JMenu("Edit");
 		editMenu.add(new JMenuItem(editDiagramAction));
+		editMenu.addSeparator();
 		editMenu.add(new JMenuItem(copyToClipboardAction));
+		editMenu.addSeparator();
+		editMenu.add(new JMenuItem(deleteDiagramAction));
 		menuBar.add(editMenu);
 		JMenu helpMenu = new JMenu("Help");
 		JMenuItem aboutMenuItem = new JMenuItem(aboutAction);
@@ -189,6 +217,11 @@ public class JSchnizzle implements Listener {
 		frame.setTitle("JSchnizzle");
 		frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 		frame.setSize(800, 600);
+		try {
+			frame.setIconImage(ImageIO.read(ClassLoader.getSystemResource("jsl.jpg")));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		JPanel panel = createMainPanel();
 		frame.add(panel);
 		frame.addWindowListener(new WindowAdapter() {
@@ -264,6 +297,17 @@ public class JSchnizzle implements Listener {
 		useCaseTaskPane.addMouseListener(useCaseMouseAdapter);
 		taskPaneContainer.add(useCaseTaskPane);
 
+		sequenceScriptsList = createScriptsList(applicationModel.getSequenceScriptsModel(), mainPanel);
+		JXTaskPane sequenceTaskPane = new JXTaskPane();
+		sequenceTaskPane.setTitle("Sequence Diagrams");
+		sequenceTaskPane.setToolTipText("Sequence Diagram Definitions");
+		sequenceTaskPane.add(sequenceScriptsList);
+		sequenceTaskPane.getContentPane().setBackground(Color.WHITE);
+		MouseAdapter sequenceMouseAdapter = createDefinitionsMouseAdapter(DiagramType.Sequence, mainPanel, sequenceScriptsList);
+		sequenceScriptsList.addMouseListener(sequenceMouseAdapter);
+		sequenceTaskPane.addMouseListener(sequenceMouseAdapter);
+		taskPaneContainer.add(sequenceTaskPane);
+
 		horizontalSplitPane.add(UIUtils.createTitledPanel("Definitions", new JScrollPane(taskPaneContainer)));
 
 		imagePanel = new ImagePanel();
@@ -273,8 +317,8 @@ public class JSchnizzle implements Listener {
 		return mainPanel;
 	}
 
-	private JList createScriptsList(final DefaultListModel scriptsModel, final JPanel mainPanel) {
-		final JList scriptsList = new JList(scriptsModel);
+	private JList<Diagram> createScriptsList(final DefaultListModel<Diagram> scriptsModel, final JPanel mainPanel) {
+		final JList<Diagram> scriptsList = new JList<Diagram>(scriptsModel);
 		scriptsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		scriptsList.setCellRenderer(new DiagramCellRenderer());
 		scriptsList.addListSelectionListener(new ListSelectionListener() {
@@ -299,10 +343,10 @@ public class JSchnizzle implements Listener {
 						editDiagramAction.setDiagram(null); // for safety
 						deleteDiagramAction.setEnabled(false);
 						deleteDiagramAction.setDiagram(null); // for safety
-						copyToClipboardAction.setDiagram(null); // for safety
 						copyToClipboardAction.setEnabled(false);
-						exportImageAction.setDiagram(null);
+						copyToClipboardAction.setDiagram(null); // for safety
 						exportImageAction.setEnabled(false);
+						exportImageAction.setDiagram(null); // for safety
 					}
 				}
 			}
@@ -311,7 +355,7 @@ public class JSchnizzle implements Listener {
 		return scriptsList;
 	}
 
-	private MouseAdapter createDefinitionsMouseAdapter(final DiagramType diagramType, final JPanel mainPanel, final JList scriptsList) {
+	private MouseAdapter createDefinitionsMouseAdapter(final DiagramType diagramType, final JPanel mainPanel, final JList<Diagram> scriptsList) {
 		return new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent e) {
@@ -319,14 +363,22 @@ public class JSchnizzle implements Listener {
 					case Activity:
 						classScriptsList.clearSelection();
 						useCaseScriptsList.clearSelection();
+						sequenceScriptsList.clearSelection();
 						break;
 					case Class:
 						activityScriptsList.clearSelection();
 						useCaseScriptsList.clearSelection();
+						sequenceScriptsList.clearSelection();
 						break;
 					case UseCase:
 						activityScriptsList.clearSelection();
 						classScriptsList.clearSelection();
+						sequenceScriptsList.clearSelection();
+						break;
+					case Sequence:
+						activityScriptsList.clearSelection();
+						classScriptsList.clearSelection();
+						useCaseScriptsList.clearSelection();
 						break;
 				}
 				checkForTriggerEvent(e);
@@ -361,6 +413,9 @@ public class JSchnizzle implements Listener {
 							break;
 						case UseCase:
 							useCasePopupMenu.show(e.getComponent(), e.getX(), e.getY());
+							break;
+						case Sequence:
+							sequencePopupMenu.show(e.getComponent(), e.getX(), e.getY());
 							break;
 					}
 				}
@@ -409,6 +464,9 @@ public class JSchnizzle implements Listener {
 			case UseCase:
 				imagePanel.setDiagram((Diagram) applicationModel.getUseCaseScriptsModel().get(selectedIndex));
 				break;
+			case Sequence:
+				imagePanel.setDiagram((Diagram) applicationModel.getSequenceScriptsModel().get(selectedIndex));
+				break;
 		}
 		mainPanel.revalidate();
 	}
@@ -441,7 +499,7 @@ public class JSchnizzle implements Listener {
 
 	public static void main(String[] args) {
 		new JSchnizzle();
-		UIUtils.logMessage("JSchnizzle started.");
+		LOGGER.info("JSchnizzle started.");
 	}
 
 	private static class DiagramCellRenderer extends DefaultListCellRenderer {
@@ -461,10 +519,7 @@ public class JSchnizzle implements Listener {
 					Object eventPayload = event.getPayload();
 					switch (event.getEventType()) {
 						case Log:
-							consoleTextArea.append((new Date()).toString());
-							consoleTextArea.append("  ");
 							consoleTextArea.append(eventPayload.toString());
-							consoleTextArea.append("\n");
 							consoleTextArea.setCaretPosition(consoleTextArea.getText().length());
 							break;
 						case DiagramAdded:
@@ -472,9 +527,11 @@ public class JSchnizzle implements Listener {
 							break;
 						case DiagramDeleted:
 							applicationModel.deleteDiagram((Diagram) eventPayload);
+							imagePanel.setDiagram(null);
 							break;
 						case DiagramDeleteAll:
 							applicationModel.deleteAllDiagrams();
+							imagePanel.setDiagram(null);
 							break;
 						case DiagramModified:
 							switch (((Diagram) eventPayload).getType()) {
@@ -486,6 +543,9 @@ public class JSchnizzle implements Listener {
 									break;
 								case UseCase:
 									refreshSelectedDiagram(DiagramType.UseCase, mainPanel, useCaseScriptsList.getSelectedIndex());
+									break;
+								case Sequence:
+									refreshSelectedDiagram(DiagramType.Sequence, mainPanel, sequenceScriptsList.getSelectedIndex());
 									break;
 							}
 							applicationModel.markModelDirty();
@@ -507,11 +567,18 @@ public class JSchnizzle implements Listener {
 								case UseCase:
 									useCaseScriptsList.setSelectedIndex(applicationModel.getUseCaseScriptsModel().indexOf((Diagram) eventPayload));
 									break;
+								case Sequence:
+									sequenceScriptsList.setSelectedIndex(applicationModel.getSequenceScriptsModel().indexOf((Diagram) eventPayload));
+									break;
 							}
 							imagePanel.setDiagram((Diagram) eventPayload);
 							break;
 						case FileNameChanged:
-							frame.setTitle("JSchnizzle - " + eventPayload);
+							if (eventPayload == null) {
+								frame.setTitle("JSchnizzle");
+							} else {
+								frame.setTitle("JSchnizzle - " + eventPayload);
+							}
 							applicationModel.setFileName((String) eventPayload);
 							applicationModel.markModelClean();
 							break;
@@ -519,7 +586,7 @@ public class JSchnizzle implements Listener {
 							break;
 					}
 				} catch (Exception e) {
-					UIUtils.logException(e);
+					LOGGER.error("Trapped unexpected error while processing event: " + event, e);
 				} finally {
 					updateActionStates();
 				}

@@ -19,62 +19,60 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.AbstractAction;
 import javax.swing.JOptionPane;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alternatecomputing.jschnizzle.event.Dispatcher;
+import com.alternatecomputing.jschnizzle.event.EventType;
+import com.alternatecomputing.jschnizzle.event.JSEvent;
 import com.alternatecomputing.jschnizzle.model.ApplicationModel;
 
 /**
- * Action class to exit the application
+ * Action class to close a configuration file
  */
-public class ExitAction extends AbstractAction {
-	private static final long serialVersionUID = -1739318577459999832L;
-	private static final Logger LOGGER = LoggerFactory.getLogger(ExitAction.class);
+public class CloseAction extends AbstractFileAction {
+	private static final long serialVersionUID = -7154598817626516893L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(CloseAction.class);
 	private Component parent;
 	private ApplicationModel applicationModel;
 	private ActionListener saveAction;
-	private ActionListener saveAsAction;
 
 	/**
 	 * constructor
 	 *
 	 * @param applicationModel application model
 	 * @param parent component on which to center the dialog
-	 * @param saveAction action class for saving the model prior to exiting if needed
-	 * @param saveAsAction action class for saving the model prior to exiting if needed
+	 * @param saveAction action to save changes if needed prior to loading a new configuration
 	 */
-	public ExitAction(ApplicationModel applicationModel, Component parent, ActionListener saveAction, ActionListener saveAsAction) {
-		super("Exit", null);
-		putValue(SHORT_DESCRIPTION, "Exit JSchnizzle");
+	public CloseAction(ApplicationModel applicationModel, Component parent, ActionListener saveAction) {
+		super("Close", null);
+		putValue(SHORT_DESCRIPTION, "Close diagram definitions");
 		this.applicationModel = applicationModel;
 		this.parent = parent;
 		this.saveAction = saveAction;
-		this.saveAsAction = saveAsAction;
 	}
 
 	/**
 	 * @see java.awt.event.ActionListener#actionPerformed(ActionEvent)
 	 */
-	public void actionPerformed(ActionEvent e) {
+	public void actionPerformed(ActionEvent actionEvent) {
 		if (applicationModel.isModelDirty()) {
 			int n = JOptionPane.showConfirmDialog(parent, "There are unsaved diagram definition changes.\nWould you like to save these first?", "Save changes?", JOptionPane.YES_NO_CANCEL_OPTION);
 			if (n == JOptionPane.YES_OPTION) {
-				if (applicationModel.getFileName() != null) {
-					saveAction.actionPerformed(null);
-				} else {
-					saveAsAction.actionPerformed(null);
-				}
+				saveAction.actionPerformed(null);
 			} else if (n == JOptionPane.CANCEL_OPTION) {
 				return;
 			}
 		}
-		int n = JOptionPane.showConfirmDialog(parent, "Are you sure you would like to exit?", "Exit?", JOptionPane.YES_NO_OPTION);
-		if (n == JOptionPane.YES_OPTION) {
-			LOGGER.info("JSchnizzle shut down.");
-			System.exit(0);
+		try {
+			Dispatcher.dispatchEvent(new JSEvent(EventType.ProgressStarted, null, null));
+			Dispatcher.dispatchEvent(new JSEvent(EventType.DiagramDeleteAll, this, null));
+			LOGGER.info("File '" + applicationModel.getFileName() + "' closed.");
+			Dispatcher.dispatchEvent(new JSEvent(EventType.FileNameChanged, this, null));
+		} finally {
+			Dispatcher.dispatchEvent(new JSEvent(EventType.ProgressCompleted, null, null));
 		}
 	}
 

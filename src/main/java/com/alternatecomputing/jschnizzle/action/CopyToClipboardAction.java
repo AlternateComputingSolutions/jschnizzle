@@ -1,12 +1,12 @@
 /*
  * Copyright 2010 Alternate Computing Solutions Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,15 +20,18 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alternatecomputing.jschnizzle.model.Diagram;
 import com.alternatecomputing.jschnizzle.model.ImageSelection;
-import com.alternatecomputing.jschnizzle.util.UIUtils;
 
 /**
  * Action to copy a diagram image to the system clipboard.
  */
 public class CopyToClipboardAction extends AbstractAction {
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = -5317257167303881574L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(CopyToClipboardAction.class);
 	private Diagram diagram;
 
 	/**
@@ -45,12 +48,12 @@ public class CopyToClipboardAction extends AbstractAction {
 	public void actionPerformed(ActionEvent arg0) {
 		ImageSelection imageSelection = new ImageSelection(diagram.nonBeanImage());
 		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(imageSelection, null);
-		UIUtils.logMessage("Diagram '" + diagram.getName() + "' image successfully saved to the clipboard.");
+		LOGGER.info("Diagram '" + diagram.getName() + "' image successfully saved to the clipboard.");
 	}
 
 	/**
 	 * set the diagram containing the image to be copied to the system clipboard
-	 * 
+	 *
 	 * @param diagram diagram
 	 */
 	public void setDiagram(Diagram diagram) {

@@ -1,12 +1,12 @@
 /*
  * Copyright 2010 Alternate Computing Solutions Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -40,6 +40,8 @@ import javax.swing.JTextPane;
 
 import org.jdesktop.swingx.JXHeader;
 import org.jdesktop.swingx.JXImagePanel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.alternatecomputing.jschnizzle.util.UIUtils;
 import com.jgoodies.forms.builder.DefaultFormBuilder;
@@ -51,12 +53,13 @@ import com.jgoodies.forms.layout.FormLayout;
  * Action class for presenting the about dialog
  */
 public class AboutAction extends AbstractAction {
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 6753966509469848156L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(AboutAction.class);
 	private Frame owner;
 
 	/**
 	 * constructor
-	 * 
+	 *
 	 * @param owner owner of the presented about dialog
 	 */
 	public AboutAction(Frame owner) {
@@ -79,11 +82,11 @@ public class AboutAction extends AbstractAction {
 
 	/**
 	 * create the about panel
-	 * 
-	 * @param parent component that will contain this panel
+	 *
+	 * @param dialog component that will contain this panel
 	 * @return about panel
 	 */
-	private JPanel createAboutPanel(final Component parent) {
+	private JPanel createAboutPanel(final JDialog dialog) {
 		FormLayout layout = new FormLayout("fill:min:grow, pref", "pref, 4dlu, fill:min:grow, 4dlu, pref");
 		DefaultFormBuilder builder = new DefaultFormBuilder(layout);
 		builder.setDefaultDialogBorder();
@@ -99,7 +102,7 @@ public class AboutAction extends AbstractAction {
 		JButton okButton = new JButton("OK");
 		okButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				parent.setVisible(false);
+				dialog.dispose();
 			}
 		});
 		builder.add(ButtonBarFactory.buildOKBar(okButton), cc.xy(2, 5));
@@ -108,7 +111,7 @@ public class AboutAction extends AbstractAction {
 
 	/**
 	 * create the panel containing the notice information
-	 * 
+	 *
 	 * @return notice panel
 	 */
 	private JPanel createNoticePanel() {
@@ -117,7 +120,7 @@ public class AboutAction extends AbstractAction {
 
 	/**
 	 * create the panel containing the license information
-	 * 
+	 *
 	 * @return license panel
 	 */
 	private JPanel createLicensePanel() {
@@ -126,7 +129,7 @@ public class AboutAction extends AbstractAction {
 
 	/**
 	 * create the panel containing the acknowledgement information
-	 * 
+	 *
 	 * @return acknowledgement panel
 	 */
 	private JPanel createAcknowledgementsPanel() {
@@ -135,7 +138,7 @@ public class AboutAction extends AbstractAction {
 
 	/**
 	 * create the panel containing the version information
-	 * 
+	 *
 	 * @return version panel
 	 */
 	private Component createVersionPanel() {
@@ -150,7 +153,7 @@ public class AboutAction extends AbstractAction {
 			imagePanel.setImage(image);
 			imagePanel.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
 		} catch (IOException e) {
-			UIUtils.logException(e);
+			LOGGER.error("Error reading logo image from classpath.", e);
 		}
 		builder.add(imagePanel, cc.xywh(2, 2, 1, 7));
 		Properties buildInfo = getBuildInfo();
@@ -176,13 +179,13 @@ public class AboutAction extends AbstractAction {
 		try {
 			buildInfo.load(inStream);
 		} catch (IOException e) {
-			UIUtils.logException(e);
+			LOGGER.error("Error retrieving build information.", e);
 		} finally {
 			if (inStream != null) {
 				try {
 					inStream.close();
 				} catch (IOException e) {
-					UIUtils.logException(e);
+					LOGGER.error("Unexpected error while loading build information.", e);
 				}
 			}
 		}
@@ -191,7 +194,7 @@ public class AboutAction extends AbstractAction {
 
 	/**
 	 * create a panel containing content from the given resource location
-	 * 
+	 *
 	 * @param resourceLocation location for content
 	 * @return panel
 	 */
@@ -210,7 +213,7 @@ public class AboutAction extends AbstractAction {
 		try {
 			textPane.setPage(aboutURL);
 		} catch (IOException e) {
-			UIUtils.logException(e);
+			LOGGER.error("Error loading content from classpath location: " + resourceLocation, e);
 		}
 		panel.add(new JScrollPane(textPane), cc.xy(1, 1));
 		return panel;

@@ -1,3 +1,5 @@
 JSchnizzle is developed and maintained by Alternate Computing Solutions Inc.  Direct all inqueries to jschnizzle@alternatecomputing.com or visit us on the web at http://www.alternatecomputing.com/
 
 JSchnizzle uses the free rendering services provided by yUML.  Alternate Computing Solutions is not affiliated with Engine Room, the makers of yUML.
+
+JSchnizzle uses the free rendering services provided by WebSequenceDiagrams.  Alternate Computing Solutions is not affiliated with Hanov Solutions Inc., the makers of WebSequenceDiagrams.

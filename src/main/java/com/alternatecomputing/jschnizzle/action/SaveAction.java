@@ -1,12 +1,12 @@
 /*
  * Copyright 2010 Alternate Computing Solutions Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,6 +26,9 @@ import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alternatecomputing.jschnizzle.event.Dispatcher;
 import com.alternatecomputing.jschnizzle.event.EventType;
 import com.alternatecomputing.jschnizzle.event.JSEvent;
@@ -33,18 +36,18 @@ import com.alternatecomputing.jschnizzle.model.ApplicationModel;
 import com.alternatecomputing.jschnizzle.model.Diagram;
 import com.alternatecomputing.jschnizzle.model.DiagramType;
 import com.alternatecomputing.jschnizzle.util.EnumPersistenceDelegate;
-import com.alternatecomputing.jschnizzle.util.UIUtils;
 
 /**
  * Action class to save a configuration file
  */
 public class SaveAction extends AbstractFileAction {
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 4747699144945828010L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(SaveAction.class);
 	private final ApplicationModel applicationModel;
 
 	/**
 	 * constructor
-	 * 
+	 *
 	 * @param applicationModel application model
 	 */
 	public SaveAction(ApplicationModel applicationModel) {
@@ -80,10 +83,11 @@ public class SaveAction extends AbstractFileAction {
 			addActivityDiagrams(diagrams);
 			addClassDiagrams(diagrams);
 			addUseCaseDiagrams(diagrams);
+			addSequenceDiagrams(diagrams);
 			encoder.writeObject(diagrams);
 			encoder.flush();
 			encoder.close();
-			UIUtils.logMessage("File '" + file.getCanonicalPath() + "' saved successfully.");
+			LOGGER.info("File '" + file.getCanonicalPath() + "' saved successfully.");
 			Dispatcher.dispatchEvent(new JSEvent(EventType.FileNameChanged, this, file.getCanonicalPath()));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -96,7 +100,7 @@ public class SaveAction extends AbstractFileAction {
 
 	/**
 	 * add use case diagrams to the given model
-	 * 
+	 *
 	 * @param diagrams collection of diagrams
 	 */
 	private void addUseCaseDiagrams(Collection<Diagram> diagrams) {
@@ -108,7 +112,7 @@ public class SaveAction extends AbstractFileAction {
 
 	/**
 	 * add class diagrams to the given model
-	 * 
+	 *
 	 * @param diagrams collection of diagrams
 	 */
 	private void addClassDiagrams(Collection<Diagram> diagrams) {
@@ -120,11 +124,23 @@ public class SaveAction extends AbstractFileAction {
 
 	/**
 	 * add activity diagrams to the given model
-	 * 
+	 *
 	 * @param diagrams collection of diagrams
 	 */
 	private void addActivityDiagrams(Collection<Diagram> diagrams) {
 		Enumeration<Diagram> elements = (Enumeration<Diagram>) applicationModel.getActivityScriptsModel().elements();
+		while (elements.hasMoreElements()) {
+			diagrams.add(elements.nextElement());
+		}
+	}
+
+	/**
+	 * add sequence diagrams to the given model
+	 *
+	 * @param diagrams collection of diagrams
+	 */
+	private void addSequenceDiagrams(Collection<Diagram> diagrams) {
+		Enumeration<Diagram> elements = (Enumeration<Diagram>) applicationModel.getSequenceScriptsModel().elements();
 		while (elements.hasMoreElements()) {
 			diagrams.add(elements.nextElement());
 		}
