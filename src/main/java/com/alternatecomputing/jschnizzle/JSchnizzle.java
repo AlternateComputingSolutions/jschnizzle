@@ -168,7 +168,6 @@ public class JSchnizzle implements Listener {
 	private void initializeLookAndFeel() {
 		try {
 			UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
-			return;
 		} catch (Exception e) {
 			try {
 				UIManager.setLookAndFeel(new Plastic3DLookAndFeel());
@@ -318,15 +317,15 @@ public class JSchnizzle implements Listener {
 	}
 
 	private JList<Diagram> createScriptsList(final DefaultListModel<Diagram> scriptsModel, final JPanel mainPanel) {
-		final JList<Diagram> scriptsList = new JList<Diagram>(scriptsModel);
+		final JList<Diagram> scriptsList = new JList<>(scriptsModel);
 		scriptsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		scriptsList.setCellRenderer(new DiagramCellRenderer());
 		scriptsList.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
-				if (e.getValueIsAdjusting() == false) {
+				if (!e.getValueIsAdjusting()) {
 					int selectedIndex = scriptsList.getSelectedIndex();
 					if (selectedIndex > -1) {
-						Diagram diagram = (Diagram) scriptsModel.get(selectedIndex);
+						Diagram diagram = scriptsModel.get(selectedIndex);
 						imagePanel.setDiagram(diagram);
 						editDiagramAction.setDiagram(diagram);
 						editDiagramAction.setEnabled(true);
@@ -456,16 +455,16 @@ public class JSchnizzle implements Listener {
 	private void refreshSelectedDiagram(DiagramType diagramType, final JPanel mainPanel, int selectedIndex) {
 		switch (diagramType) {
 			case Activity:
-				imagePanel.setDiagram((Diagram) applicationModel.getActivityScriptsModel().get(selectedIndex));
+				imagePanel.setDiagram(applicationModel.getActivityScriptsModel().get(selectedIndex));
 				break;
 			case Class:
-				imagePanel.setDiagram((Diagram) applicationModel.getClassScriptsModel().get(selectedIndex));
+				imagePanel.setDiagram(applicationModel.getClassScriptsModel().get(selectedIndex));
 				break;
 			case UseCase:
-				imagePanel.setDiagram((Diagram) applicationModel.getUseCaseScriptsModel().get(selectedIndex));
+				imagePanel.setDiagram(applicationModel.getUseCaseScriptsModel().get(selectedIndex));
 				break;
 			case Sequence:
-				imagePanel.setDiagram((Diagram) applicationModel.getSequenceScriptsModel().get(selectedIndex));
+				imagePanel.setDiagram(applicationModel.getSequenceScriptsModel().get(selectedIndex));
 				break;
 		}
 		mainPanel.revalidate();
