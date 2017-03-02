@@ -66,8 +66,8 @@ public class YUMLRenderer implements Renderer {
 		String baseURL = getBaseURL();
 		try {
 			HttpClient client = new HttpClient();
-            String proxyHost = System.getProperty("http.proxyHost");
-            String proxyPort = System.getProperty("http.proxyPort");
+            String proxyHost = System.getProperty("https.proxyHost");
+            String proxyPort = System.getProperty("https.proxyPort");
             if (StringUtils.isNotBlank(proxyHost) && StringUtils.isNotBlank(proxyPort)) {
                 client.getHostConfiguration().setProxy(proxyHost, Integer.parseInt(proxyPort));
             }
@@ -116,7 +116,7 @@ public class YUMLRenderer implements Renderer {
 	private String getBaseURL() {
 		String baseURL = System.getProperty("yuml.url");
 		if (baseURL == null) {
-			baseURL = "http://yuml.me/";
+			baseURL = "https://yuml.me/";
 		}
 		return baseURL;
 	}
